@@ -1,14 +1,14 @@
 # Name of aws region (us-west-1, us-west-2, us-east-1 etc)
-aws_region = "us-west-2"
+aws_region = "us-east-1"
 
 # Deploy private mode (Internal route 53, don't use Gateway etc) (true or false)
 aws_private = "false"
 
 # List of aws region availability_zones
-availability_zones = ["us-west-2b", "us-west-2a", "us-west-2c"]
+availability_zones = ["us-east-1b", "us-east-1a", "us-east-1c"]
 
 # Name of kubernetes cluster. It's tag for cluster
-cluster_name = "swiss"
+cluster_name = "swiss-test"
 
 # Deploy environment name
 environment = "dev"
@@ -20,7 +20,7 @@ project = "EDUCATION"
 mainzoneid = "Z02149423PVQ0YMP19F13"
 
 # Name of domains (create route53 zone and ingress). Set as array, first main ingress fqdn ["example.com", "example.io"]
-domains = ["swiss-army.edu.provectus.io"]
+domains = ["swiss-test.edu.provectus.io"]
 
 # The kubernetes config file path
 config_path = "kubeconfig_swiss"

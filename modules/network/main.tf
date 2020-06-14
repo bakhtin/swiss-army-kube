@@ -41,7 +41,7 @@ module "vpc" {
     Environment                                 = var.environment
     Project                                     = var.project
     "kubernetes.io/role/elb"                    = ""
-    "kubernetes.io/cluster/${var.cluster_name}" = "owned"
+    "kubernetes.io/cluster/${var.cluster_name}" = "shared"
   }
 
   private_subnet_tags = {
@@ -49,9 +49,10 @@ module "vpc" {
   }
 
   tags = {
-    Name        = "${var.environment}-${var.cluster_name}"
-    Environment = var.environment
-    Project     = var.project
-    Terraform   = "true"
+    Name                                        = "${var.environment}-${var.cluster_name}"
+    KubernetesCluster                           = "${var.cluster_name}"    
+    Environment                                 = var.environment
+    Project                                     = var.project
+    "kubernetes.io/cluster/${var.cluster_name}" = "shared"    
   }
 }

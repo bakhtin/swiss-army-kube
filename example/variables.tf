@@ -16,6 +16,7 @@ variable "availability_zones" {
 variable "environment" {
   type        = string
   description = "Environment Use in tags and annotations for identify EKS cluster"
+  default     = "dev"
 }
 
 #Deploy project name

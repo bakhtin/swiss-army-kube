@@ -7,14 +7,6 @@ module "kubernetes" {
   vpc_id                     = module.network.vpc_id
   subnets                    = module.network.private_subnets
   admin_arns                 = var.admin_arns
-  on_demand_max_cluster_size = var.on_demand_max_cluster_size
-  on_demand_min_cluster_size = var.on_demand_min_cluster_size
-  on_demand_desired_capacity = var.on_demand_desired_capacity
-  on_demand_instance_type    = var.on_demand_instance_type
-  spot_max_cluster_size      = var.spot_max_cluster_size
-  spot_min_cluster_size      = var.spot_min_cluster_size
-  spot_desired_capacity      = var.spot_desired_capacity
-  spot_instance_type         = var.spot_instance_type
   cluster_version            = var.cluster_version
 }
 
@@ -29,7 +21,7 @@ module "network" {
 }
 
 module "system" {
-  module_depends_on = [module.network.vpc_id, module.kubernetes.cluster_name]
+  module_depends_on = [module.network.vpc_id, module.kubernetes.cluster_name, module.kubernetes.node_groups]
   source            = "../modules/system"
 
   environment        = var.environment
@@ -46,7 +38,7 @@ module "system" {
 
 # Ingress
 module "nginx" {
-  module_depends_on = [module.system.cert-manager]
+  module_depends_on = [module.system.cert-manager, module.kubernetes.node_groups]
   source            = "../modules/ingress/nginx"
 
   cluster_name = var.cluster_name
@@ -62,9 +54,19 @@ module "nginx" {
   cookie-secret        = var.cookie-secret
 }
 
+#Scaling
+module "aws-cluster-autoscaler" {
+  module_depends_on = [module.kubernetes.node_groups]
+  source            = "../modules/scaling"
+
+  cluster_name      = var.cluster_name
+  namespace         = kube-system
+  autoscaler_conf   = {}
+}
+
 # Monitoring
 #module "prometheus" {
-#  module_depends_on = [module.system.cert-manager,module.nginx.nginx-ingress]
+#  module_depends_on = [module.system.cert-manager,module.nginx.nginx-ingress, module.kubernetes.node_groups]
 #  source            = "../modules/monitoring/prometheus"
 #
 #  cluster_name = var.cluster_name
@@ -75,7 +77,7 @@ module "nginx" {
 
 # Logging
 #module "loki" {
-#  module_depends_on = [module.system.cert-manager,module.nginx.nginx-ingress]
+#  module_depends_on = [module.system.cert-manager,module.nginx.nginx-ingress, module.kubernetes.node_groups]
 #  source            = "../modules/logging/loki"
 #
 #  cluster_name = var.cluster_name
@@ -84,7 +86,7 @@ module "nginx" {
 #}
 
 #module "efk" {
-#  module_depends_on     = [module.system.cert-manager,module.nginx.nginx-ingress]
+#  module_depends_on     = [module.system.cert-manager,module.nginx.nginx-ingress, module.kubernetes.node_groups]
 #  source                = "../modules/logging/efk"
 #  domains               = var.domains
 #  config_path           = "${path.module}/kubeconfig_${var.cluster_name}"
@@ -98,14 +100,14 @@ module "nginx" {
 
 #ARGO CD
 #module "argo-cd" {
-#  module_depends_on = [module.system.cert-manager,module.nginx.nginx-ingress]
+#  module_depends_on = [module.system.cert-manager,module.nginx.nginx-ingress, module.kubernetes.node_groups]
 #  source            = "../modules/cicd/argo-cd"
 #
 #  domains = var.domains
 #}
 
 #module "argo-artifacts" {
-#  module_depends_on = [module.system.cert-manager,module.argo-events.argo_events_namespace,module.nginx.nginx-ingress]
+#  module_depends_on = [module.system.cert-manager,module.argo-events.argo_events_namespace,module.nginx.nginx-ingress, module.kubernetes.node_groups]
 #  source            = "../modules/cicd/argo-artifacts"
 #
 #  aws_region            = var.aws_region
@@ -116,12 +118,12 @@ module "nginx" {
 #}
 
 #module "argo-events" {
-#  module_depends_on = [module.system.cert-manager,module.nginx.nginx-ingress]
+#  module_depends_on = [module.system.cert-manager,module.nginx.nginx-ingress, module.kubernetes.node_groups]
 #  source            = "../modules/cicd/argo-events"
 #}
 
 #module "argo-workflow" {
-#  module_depends_on = [module.system.cert-manager,module.nginx.nginx-ingress]
+#  module_depends_on = [module.system.cert-manager,module.nginx.nginx-ingress, module.kubernetes.node_groups]
 #  source            = "../modules/cicd/argo-workflow"
 #
 #  aws_region    = var.aws_region
@@ -129,7 +131,7 @@ module "nginx" {
 #}
 
 module "jenkins" {
-  module_depends_on = [module.system.cert-manager, module.nginx.nginx-ingress]
+  module_depends_on = [module.system.cert-manager, module.nginx.nginx-ingress, module.kubernetes.node_groups]
   source            = "../modules/cicd/jenkins"
 
   domains          = var.domains

@@ -17,3 +17,8 @@ output "this" {
   value       = module.eks
   description = "TBD"
 }
+
+output "node_groups" {
+  description = "Outputs from node groups"
+  value       = module.eks.node_groups
+}

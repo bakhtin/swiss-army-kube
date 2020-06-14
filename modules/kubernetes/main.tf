@@ -22,8 +22,9 @@ module "eks" {
     "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryFullAccess",
   ]
 
-  workers_group_defaults = {
-     additional_userdata = "sudo yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm && sudo systemctl enable amazon-ssm-agent && sudo systemctl start amazon-ssm-agent"
+  node_groups_defaults = {
+    ami_type  = "AL2_x86_64"
+    additional_userdata = "sudo yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm && sudo systemctl enable amazon-ssm-agent && sudo systemctl start amazon-ssm-agent"
   }
 
   # Note:
@@ -32,27 +33,54 @@ module "eks" {
   #
   #   After that autoscaler is able to see the resources on that ASG.
   #
-  worker_groups = [
-    {
-      name                 = "on-demand-1"
-      instance_type        = var.on_demand_instance_type
-      asg_max_size         = var.on_demand_max_cluster_size
-      asg_min_size         = var.on_demand_min_cluster_size
-      asg_desired_capacity = var.on_demand_desired_capacity
-      autoscaling_enabled  = false
-      kubelet_extra_args   = "--node-labels=node.kubernetes.io/lifecycle=normal"
-      suspended_processes  = ["AZRebalance"]
-    },
-    {
-      name                 = "spot-1"
-      spot_price           = var.spot_price
-      instance_type        = var.spot_instance_type
-      asg_max_size         = var.spot_max_cluster_size
-      asg_min_size         = var.spot_min_cluster_size
-      asg_desired_capacity = var.spot_desired_capacity
-      autoscaling_enabled  = true
-      kubelet_extra_args   = "--node-labels=node.kubernetes.io/lifecycle=spot"
-      suspended_processes  = ["AZRebalance"]
+  node_groups = {
+    common = {
+      desired_capacity = 1
+      max_capacity     = 10
+      min_capacity     = 1
+
+      instance_type = "m5.large"
+      k8s_labels = {
+        Environment = var.environment
+        Project     = var.project
+        role        = "compute-common"
+      }
+      additional_tags = {
+        role = "compute-common"
+      }
     }
-  ]
+    compute-cpu = {
+      desired_capacity = 1
+      max_capacity     = 10
+      min_capacity     = 1
+
+      instance_type = "c5n.large"
+      k8s_labels = {
+        Environment = var.environment
+        Project     = var.project
+        role        = "compute-cpu"
+      }
+      additional_tags = {
+        role = "compute-cpu"
+      }
+    }
+    compute-gpu = {
+      desired_capacity = 1
+      max_capacity     = 10
+      min_capacity     = 1
+
+      ami_type      = "AL2_x86_64_GPU"
+      instance_type = "g2.2xlarge"
+      k8s_labels = {
+        Environment                   = var.environment
+        Project                       = var.project
+        role                          = "compute-gpu"
+        k8s.amazonaws.com/accelerator = "nvidia-tesla-k80"
+        
+      }
+      additional_tags = {
+        role = "compute-gpu"
+      }
+    }        
+  }
 }
