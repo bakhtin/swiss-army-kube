@@ -24,8 +24,8 @@ resource "aws_route53_zone" "cluster" {
 resource "aws_route53_record" "cluster-ns" {
   depends_on = [
     var.module_depends_on
-  ]  
-  count = var.aws_private == "false" ? length(var.domains) : 0
+  ]
+  count   = var.aws_private == "false" ? length(var.domains) : 0
   zone_id = var.mainzoneid
   name    = element(var.domains, count.index)
   type    = "NS"
@@ -43,12 +43,12 @@ resource "aws_route53_record" "cluster-ns" {
 resource "aws_route53_zone" "private" {
   depends_on = [
     var.module_depends_on
-  ]  
+  ]
   count = var.aws_private == "true" ? length(var.domains) : 0
-  name = element(var.domains, count.index)
+  name  = element(var.domains, count.index)
   vpc {
     vpc_id = data.aws_vpc.main.id
-  } 
+  }
 }
 
 # OIDC cluster EKS settings
@@ -304,13 +304,13 @@ resource "helm_release" "metrics-server" {
   depends_on = [
     null_resource.wait-eks,
     var.module_depends_on
-    ]
+  ]
 
-  name          = "state"
-  repository    = "https://kubernetes-charts.storage.googleapis.com"
-  chart         = "metrics-server"
-  version       = "2.11.1"
-  namespace     = "kube-system"
+  name       = "state"
+  repository = "https://kubernetes-charts.storage.googleapis.com"
+  chart      = "metrics-server"
+  version    = "2.11.1"
+  namespace  = "kube-system"
 
 }
 
@@ -320,11 +320,11 @@ resource "helm_release" "sealed-secrets" {
     var.module_depends_on,
     null_resource.wait-eks
   ]
-  name          = "sealed-secrets"
-  repository    = "https://kubernetes-charts.storage.googleapis.com"
-  chart         = "sealed-secrets"
-  version       = "1.10.1"
-  namespace     = "kube-system"
+  name       = "sealed-secrets"
+  repository = "https://kubernetes-charts.storage.googleapis.com"
+  chart      = "sealed-secrets"
+  version    = "1.10.1"
+  namespace  = "kube-system"
 
   values = [
     "${file("${path.module}/values/sealed-secrets.yaml")}",

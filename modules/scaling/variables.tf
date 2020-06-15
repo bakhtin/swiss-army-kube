@@ -1,3 +1,7 @@
+variable "module_depends_on" {
+  default = []
+}
+
 variable autoscaler_conf {
   default = {}
 }

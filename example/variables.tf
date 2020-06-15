@@ -181,12 +181,12 @@ variable "jenkins_password" {
 
 variable "agent_policy" {
   description = "Policy attached to Jenkins agents IAM role"
-  default = ""
+  default     = ""
 }
 
 variable "master_policy" {
   description = "Policy attached to Jenkins master IAM role"
-  default = ""
+  default     = ""
 }
 
 #Grafana

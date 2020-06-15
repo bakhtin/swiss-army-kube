@@ -50,9 +50,9 @@ module "vpc" {
 
   tags = {
     Name                                        = "${var.environment}-${var.cluster_name}"
-    KubernetesCluster                           = "${var.cluster_name}"    
+    KubernetesCluster                           = "${var.cluster_name}"
     Environment                                 = var.environment
     Project                                     = var.project
-    "kubernetes.io/cluster/${var.cluster_name}" = "shared"    
+    "kubernetes.io/cluster/${var.cluster_name}" = "shared"
   }
 }

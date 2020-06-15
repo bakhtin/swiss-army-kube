@@ -1,3 +1,7 @@
+data "aws_eks_cluster" "this" {
+  name = var.cluster_name
+}
+
 module "eks" {
   source          = "terraform-aws-modules/eks/aws"
   version         = "v12.0.0"
@@ -23,7 +27,7 @@ module "eks" {
   ]
 
   node_groups_defaults = {
-    ami_type  = "AL2_x86_64"
+    ami_type            = "AL2_x86_64"
     additional_userdata = "sudo yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm && sudo systemctl enable amazon-ssm-agent && sudo systemctl start amazon-ssm-agent"
   }
 
@@ -46,7 +50,8 @@ module "eks" {
         role        = "compute-common"
       }
       additional_tags = {
-        role = "compute-common"
+        "autoscaling:ResourceTag/k8s.io/cluster-autoscaler/enabled"                     = "true",
+        "autoscaling:ResourceTag/kubernetes.io/cluster/${data.aws_eks_cluster.this.id}" = "owned"
       }
     }
     compute-cpu = {
@@ -61,7 +66,8 @@ module "eks" {
         role        = "compute-cpu"
       }
       additional_tags = {
-        role = "compute-cpu"
+        "autoscaling:ResourceTag/k8s.io/cluster-autoscaler/enabled"                     = "true",
+        "autoscaling:ResourceTag/kubernetes.io/cluster/${data.aws_eks_cluster.this.id}" = "owned"
       }
     }
     compute-gpu = {
@@ -72,15 +78,16 @@ module "eks" {
       ami_type      = "AL2_x86_64_GPU"
       instance_type = "g2.2xlarge"
       k8s_labels = {
-        Environment                   = var.environment
-        Project                       = var.project
-        role                          = "compute-gpu"
-        k8s.amazonaws.com/accelerator = "nvidia-tesla-k80"
-        
+        Environment                     = var.environment
+        Project                         = var.project
+        role                            = "compute-gpu"
+        "k8s.amazonaws.com/accelerator" = "nvidia-tesla-k80"
+
       }
       additional_tags = {
-        role = "compute-gpu"
+        "autoscaling:ResourceTag/k8s.io/cluster-autoscaler/enabled"                     = "true",
+        "autoscaling:ResourceTag/kubernetes.io/cluster/${data.aws_eks_cluster.this.id}" = "owned"
       }
-    }        
+    }
   }
 }

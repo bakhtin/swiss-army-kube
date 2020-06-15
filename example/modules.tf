@@ -1,13 +1,13 @@
 module "kubernetes" {
   source = "../modules/kubernetes"
 
-  environment                = var.environment
-  project                    = var.project
-  cluster_name               = var.cluster_name
-  vpc_id                     = module.network.vpc_id
-  subnets                    = module.network.private_subnets
-  admin_arns                 = var.admin_arns
-  cluster_version            = var.cluster_version
+  environment     = var.environment
+  project         = var.project
+  cluster_name    = var.cluster_name
+  vpc_id          = module.network.vpc_id
+  subnets         = module.network.private_subnets
+  admin_arns      = var.admin_arns
+  cluster_version = var.cluster_version
 }
 
 module "network" {
@@ -59,9 +59,9 @@ module "aws-cluster-autoscaler" {
   module_depends_on = [module.kubernetes.node_groups]
   source            = "../modules/scaling"
 
-  cluster_name      = var.cluster_name
-  namespace         = kube-system
-  autoscaler_conf   = {}
+  cluster_name    = var.cluster_name
+  namespace       = "kube-system"
+  autoscaler_conf = {}
 }
 
 # Monitoring
@@ -137,14 +137,14 @@ module "jenkins" {
   domains          = var.domains
   jenkins_password = var.jenkins_password
 
-  environment        = var.environment
-  project            = var.project
-  cluster_name       = var.cluster_name
-  cluster_oidc_url   = module.kubernetes.cluster_oidc_url
-  cluster_oidc_arn   = module.system.oidc_arn
+  environment      = var.environment
+  project          = var.project
+  cluster_name     = var.cluster_name
+  cluster_oidc_url = module.kubernetes.cluster_oidc_url
+  cluster_oidc_arn = module.system.oidc_arn
 
-  master_policy      = var.master_policy
-  agent_policy       = var.agent_policy
+  master_policy = var.master_policy
+  agent_policy  = var.agent_policy
 
   config_path = "${path.module}/kubeconfig_${var.cluster_name}"
 }
