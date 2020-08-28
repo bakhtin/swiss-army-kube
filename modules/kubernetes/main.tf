@@ -105,12 +105,82 @@ resource "aws_eks_node_group" "common_node_group" {
   depends_on = [
     module.eks.cluster_id
   ]
-  count           = var.on_demand_common_enabled ? 1 : 0
-  ami_type        = "AL2_x86_64"
-  cluster_name    = var.cluster_name
-  disk_size       = 100
-  instance_types  = var.on_demand_common_instance_type
-  labels          = {
+  count          = var.on_demand_common_enabled ? length(var.subnets) : 0
+  ami_type       = "AL2_x86_64"
+  cluster_name   = var.cluster_name
+  disk_size      = 100
+  instance_types = var.on_demand_common_instance_type
+  labels = {
+    "node-type" = "common"
+  }
+  node_group_name = "${var.cluster_name}-autoscaling-common-${count.index}"
+  node_role_arn   = aws_iam_role.asg-common.arn
+  subnet_ids      = [var.subnets[count.index]]
+  tags = {
+    "Environment"                                             = var.environment
+    "Project"                                                 = var.project
+    "Name"                                                    = "${var.cluster_name}-eks-ondemand-common"
+    "k8s.io/cluster-autoscaler/enabled"                       = "true"
+    "k8s.io/cluster-autoscaler/${var.cluster_name}"           = "owned"
+    "k8s.io/cluster-autoscaler/node-template/label/node-type" = "common"
+
+  }
+  scaling_config {
+    desired_size = var.on_demand_common_desired_capacity
+    max_size     = var.on_demand_common_max_cluster_size
+    min_size     = var.on_demand_common_min_cluster_size
+  }
+  # Optional: Allow external changes without Terraform plan difference
+  lifecycle {
+    ignore_changes = [scaling_config[0].desired_size]
+  }
+
+}
+resource "aws_eks_node_group" "common_node_group-b" {
+  depends_on = [
+    module.eks.cluster_id
+  ]
+  count          = var.on_demand_common_enabled ? 1 : 0
+  ami_type       = "AL2_x86_64"
+  cluster_name   = var.cluster_name
+  disk_size      = 100
+  instance_types = var.on_demand_common_instance_type
+  labels = {
+    "node-type" = "common"
+  }
+  node_group_name = "${var.cluster_name}-autoscaling-common"
+  node_role_arn   = aws_iam_role.asg-common.arn
+  subnet_ids      = var.subnets
+  tags = {
+    "Environment"                                             = var.environment
+    "Project"                                                 = var.project
+    "Name"                                                    = "${var.cluster_name}-eks-ondemand-common"
+    "k8s.io/cluster-autoscaler/enabled"                       = "true"
+    "k8s.io/cluster-autoscaler/${var.cluster_name}"           = "owned"
+    "k8s.io/cluster-autoscaler/node-template/label/node-type" = "common"
+
+  }
+  scaling_config {
+    desired_size = var.on_demand_common_desired_capacity
+    max_size     = var.on_demand_common_max_cluster_size
+    min_size     = var.on_demand_common_min_cluster_size
+  }
+  # Optional: Allow external changes without Terraform plan difference
+  lifecycle {
+    ignore_changes = [scaling_config[0].desired_size]
+  }
+
+}
+resource "aws_eks_node_group" "common_node_group-c" {
+  depends_on = [
+    module.eks.cluster_id
+  ]
+  count          = var.on_demand_common_enabled ? 1 : 0
+  ami_type       = "AL2_x86_64"
+  cluster_name   = var.cluster_name
+  disk_size      = 100
+  instance_types = var.on_demand_common_instance_type
+  labels = {
     "node-type" = "common"
   }
   node_group_name = "${var.cluster_name}-autoscaling-common"
@@ -141,13 +211,13 @@ resource "aws_eks_node_group" "cpu_node_group" {
   depends_on = [
     module.eks.cluster_id
   ]
-  count           = var.on_demand_cpu_enabled ? 1 : 0
-  ami_type        = "AL2_x86_64"
-  cluster_name    = var.cluster_name
-  disk_size       = 100
-  instance_types  = var.on_demand_cpu_instance_type
-  labels          = {
-    "node-type" = "cpu"    
+  count          = var.on_demand_cpu_enabled ? 1 : 0
+  ami_type       = "AL2_x86_64"
+  cluster_name   = var.cluster_name
+  disk_size      = 100
+  instance_types = var.on_demand_cpu_instance_type
+  labels = {
+    "node-type" = "cpu"
   }
   node_group_name = "${var.cluster_name}-autoscaling-cpu"
   node_role_arn   = aws_iam_role.asg-common.arn
@@ -175,15 +245,15 @@ resource "aws_eks_node_group" "cpu_node_group" {
 resource "aws_eks_node_group" "gpu_node_group" {
   depends_on = [
     module.eks.cluster_id
-  ]  
-  count           = var.on_demand_gpu_enabled ? 1 : 0
-  ami_type        = "AL2_x86_64_GPU"
-  cluster_name    = var.cluster_name
-  disk_size       = 100
-  instance_types  = var.on_demand_gpu_instance_type
-  labels          = {
-    "node-type"          = "gpu"
-    "nvidia.com/gpu"     = "gpu"    
+  ]
+  count          = var.on_demand_gpu_enabled ? 1 : 0
+  ami_type       = "AL2_x86_64_GPU"
+  cluster_name   = var.cluster_name
+  disk_size      = 100
+  instance_types = var.on_demand_gpu_instance_type
+  labels = {
+    "node-type"      = "gpu"
+    "nvidia.com/gpu" = "gpu"
   }
   node_group_name = "${var.cluster_name}-autoscaling-gpu"
   node_role_arn   = aws_iam_role.asg-common.arn
@@ -191,7 +261,7 @@ resource "aws_eks_node_group" "gpu_node_group" {
   tags = {
     "Environment"                                                      = var.environment
     "Project"                                                          = var.project
-    "Name"                                                             = "${var.cluster_name}-eks-ondemand-gpu"    
+    "Name"                                                             = "${var.cluster_name}-eks-ondemand-gpu"
     "k8s.io/cluster-autoscaler/enabled"                                = "true"
     "k8s.io/cluster-autoscaler/${var.cluster_name}"                    = "owned"
     "k8s.io/cluster-autoscaler/node-template/label/node-type"          = "gpu"
