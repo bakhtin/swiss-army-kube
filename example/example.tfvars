@@ -76,18 +76,21 @@ cluster_version = "1.16"
 
 # Type and number of worker node
 #Common
+on_demand_common_enabled                        = true
 on_demand_common_max_cluster_size               = "5"
 on_demand_common_min_cluster_size               = "1"
-on_demand_common_desired_capacity               = "2"
+on_demand_common_desired_capacity               = "1"
 on_demand_common_instance_type                  = ["m5.large"]
 
 #CPU
+on_demand_cpu_enabled                        = false
 on_demand_cpu_max_cluster_size               = "2"
 on_demand_cpu_min_cluster_size               = "1"
 on_demand_cpu_desired_capacity               = "1"
 on_demand_cpu_instance_type                  = ["c5.xlarge"]
 
 #GPU
+on_demand_gpu_enabled                        = false
 on_demand_gpu_max_cluster_size               = "2"
 on_demand_gpu_min_cluster_size               = "1"
 on_demand_gpu_desired_capacity               = "1"
