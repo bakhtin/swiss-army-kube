@@ -222,39 +222,39 @@ resource "helm_release" "alb-ingress" {
   ]
 }
 
-resource "kubernetes_ingress" "alb-nginx-ingress" {
-  metadata {
-    name      = "alb-nginx-ingress"
-    namespace = kubernetes_namespace.alb-ingress-system.metadata[0].name
-    annotations = {
-      "alb.ingress.kubernetes.io/certificate-arn"      = join(", ", var.certificates_arns)
-      "alb.ingress.kubernetes.io/healthcheck-path"     = "/healthz"
-      "alb.ingress.kubernetes.io/scheme"               = "internet-facing"
-      "alb.ingress.kubernetes.io/listen-ports"         = "[{\"HTTP\":80}, {\"HTTPS\":443}]"
-      "alb.ingress.kubernetes.io/actions.ssl-redirect" = "{\"Type\": \"redirect\", \"RedirectConfig\": { \"Protocol\": \"HTTPS\", \"Port\": \"443\", \"StatusCode\": \"HTTP_301\"}}"
-      "kubernetes.io/ingress.class"                    = "alb"
-    }
-  }
-
-  spec {
-    rule {
-      host = var.domains[0]
-      http {
-        path {
-          path = "/*"
-          backend {
-            service_name = "ssl-redirect"
-            service_port = "use-annotation"
-          }
-        }
-        //            path {
-        //              path = "/*"
-        //              backend {
-        //                service_name = "test"
-        //                service_port = "8080"
-        //              }
-        //            }
-      }
-    }
-  }
-}
+//resource "kubernetes_ingress" "alb-nginx-ingress" {
+//  metadata {
+//    name      = "alb-nginx-ingress"
+//    namespace = kubernetes_namespace.alb-ingress-system.metadata[0].name
+//    annotations = {
+//      "alb.ingress.kubernetes.io/certificate-arn"      = join(", ", var.certificates_arns)
+//      "alb.ingress.kubernetes.io/healthcheck-path"     = "/healthz"
+//      "alb.ingress.kubernetes.io/scheme"               = "internet-facing"
+//      "alb.ingress.kubernetes.io/listen-ports"         = "[{\"HTTP\":80}, {\"HTTPS\":443}]"
+//      "alb.ingress.kubernetes.io/actions.ssl-redirect" = "{\"Type\": \"redirect\", \"RedirectConfig\": { \"Protocol\": \"HTTPS\", \"Port\": \"443\", \"StatusCode\": \"HTTP_301\"}}"
+//      "kubernetes.io/ingress.class"                    = "alb"
+//    }
+//  }
+//
+//  spec {
+//    rule {
+//      host = var.domains[0]
+//      http {
+//        path {
+//          path = "/*"
+//          backend {
+//            service_name = "ssl-redirect"
+//            service_port = "use-annotation"
+//          }
+//        }
+//        //            path {
+//        //              path = "/*"
+//        //              backend {
+//        //                service_name = "test"
+//        //                service_port = "8080"
+//        //              }
+//        //            }
+//      }
+//    }
+//  }
+//}
