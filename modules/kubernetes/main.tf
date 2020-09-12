@@ -8,6 +8,12 @@ data "aws_ami" "eks_gpu_worker" {
   owners      = ["602401143452"] // The ID of the owner of the official AWS EKS AMIs.
 }
 
+data "template_file" "user_data" {
+  template = <<EOF
+    sudo yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm && sudo systemctl enable amazon-ssm-agent && sudo systemctl start amazon-ssm-agent
+  EOF
+}
+
 resource "aws_iam_role" "asg-common" {
   name = "${var.cluster_name}-node-group-common"
 
@@ -65,7 +71,6 @@ resource "aws_iam_role_policy_attachment" "AmazonRoute53FullAccess" {
 
 module "eks" {
   source          = "terraform-aws-modules/eks/aws"
-  version         = "v12.0.0"
   cluster_version = var.cluster_version
   cluster_name    = var.cluster_name
   kubeconfig_name = var.cluster_name
@@ -86,18 +91,101 @@ module "eks" {
     Project     = var.project
   }
 
-  #TODO:
-
-  # node_group_defaults = {
-  #   additional_userdata = "sudo yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm && sudo systemctl enable amazon-ssm-agent && sudo systemctl start amazon-ssm-agent"
-  # }
-
-
   # Note:
   #   If you add here worker groups with GPUs or some other custom resources make sure
   #   to start the node in ASG manually once or cluster autoscaler doesn't find the resources.
   #
   #   After that autoscaler is able to see the resources on that ASG.
+}
+#Launch template
+resource "aws_launch_template" "common" {
+  name = "${var.cluster_name}-common-launch-template"
+  description = "Launch template for common node group"
+  update_default_version = true
+  vpc_security_group_ids = [var.vpc_sg]
+  instance_type = var.on_demand_common_instance_type
+  block_device_mappings {
+    device_name = "/dev/sda1"
+
+    ebs {
+      volume_size = 20
+    }
+  }
+
+  user_data = base64encode(data.template_file.user_data.rendered)
+  tag_specifications {
+    resource_type = "instance"
+    tags = {
+      "Environment"                                             = var.environment
+      "Project"                                                 = var.project
+      "Name"                                                    = "${var.cluster_name}-eks-ondemand-common"
+      "k8s.io/cluster-autoscaler/enabled"                       = "true"
+      "k8s.io/cluster-autoscaler/${var.cluster_name}"           = "owned"
+      "k8s.io/cluster-autoscaler/node-template/label/node-type" = "common"
+    }
+  }
+}
+
+resource "aws_launch_template" "cpu" {
+  name = "${var.cluster_name}-cpu-launch-template"
+  description = "Launch template for cpu node group"
+  vpc_security_group_ids = [var.vpc_sg]
+  update_default_version = true
+  instance_type = var.on_demand_cpu_instance_type
+  block_device_mappings {
+    device_name = "/dev/sda1"
+
+    ebs {
+      volume_size = 20
+    }
+  }
+
+  user_data = base64encode(data.template_file.user_data.rendered)
+  tag_specifications {
+    resource_type = "instance"
+    tags = {
+      "Environment"                                             = var.environment
+      "Project"                                                 = var.project
+      "Name"                                                    = "${var.cluster_name}-eks-ondemand-cpu"
+      "k8s.io/cluster-autoscaler/enabled"                       = "true"
+      "k8s.io/cluster-autoscaler/${var.cluster_name}"           = "owned"
+      "k8s.io/cluster-autoscaler/node-template/label/node-type" = "common"
+    }
+  }
+}
+
+resource "aws_launch_template" "gpu" {
+  name = "${var.cluster_name}-gpu-launch-template"
+  description = "Launch template for gpu node group"
+  vpc_security_group_ids = [var.vpc_sg]
+  update_default_version = true
+  instance_type = var.on_demand_gpu_instance_type
+  elastic_gpu_specifications {
+    type = var.on_demand_gpu_specifications
+  }
+  block_device_mappings {
+    device_name = "/dev/sda1"
+
+    ebs {
+      volume_size = 20
+    }
+  }
+  user_data = base64encode(data.template_file.user_data.rendered)
+  tag_specifications {
+    resource_type = "instance"
+    tags = {
+      "Environment"                                             = var.environment
+      "Project"                                                 = var.project
+      "Name"                                                    = "${var.cluster_name}-eks-ondemand-common"
+      "k8s.io/cluster-autoscaler/enabled"                       = "true"
+      "k8s.io/cluster-autoscaler/${var.cluster_name}"           = "owned"
+      "k8s.io/cluster-autoscaler/node-template/label/node-type"          = "gpu"
+      "k8s.io/cluster-autoscaler/node-template/label/nvidia.com/gpu"     = "gpu"
+      "k8s.io/cluster-autoscaler/node-template/taint/node-type"          = "gpu:NoSchedule"
+      "k8s.io/cluster-autoscaler/node-template/taint/nvidia.com/gpu"     = "gpu:NoSchedule"
+      "k8s.io/cluster-autoscaler/node-template/resources/nvidia.com/gpu" = "1" # Change to the number of GPUs on your node type
+    }
+  }
 }
 
 #NODE GROUPS
@@ -105,11 +193,9 @@ resource "aws_eks_node_group" "common_node_group" {
   depends_on = [
     module.eks.cluster_id
   ]
-  count          = var.on_demand_common_enabled ? length(var.subnets) : 0
+  count          = var.on_demand_common_enabled ? 1 : 0
   ami_type       = "AL2_x86_64"
   cluster_name   = var.cluster_name
-  disk_size      = 100
-  instance_types = var.on_demand_common_instance_type
   labels = {
     "node-type" = "common"
   }
@@ -130,6 +216,10 @@ resource "aws_eks_node_group" "common_node_group" {
     max_size     = var.on_demand_common_max_cluster_size
     min_size     = var.on_demand_common_min_cluster_size
   }
+  launch_template {
+    name         = aws_launch_template.common.name
+    version      = aws_launch_template.common.default_version
+  }
   # Optional: Allow external changes without Terraform plan difference
   lifecycle {
     ignore_changes = [scaling_config[0].desired_size]
@@ -144,8 +234,6 @@ resource "aws_eks_node_group" "cpu_node_group" {
   count          = var.on_demand_cpu_enabled ? 1 : 0
   ami_type       = "AL2_x86_64"
   cluster_name   = var.cluster_name
-  disk_size      = 100
-  instance_types = var.on_demand_cpu_instance_type
   labels = {
     "node-type" = "cpu"
   }
@@ -166,6 +254,10 @@ resource "aws_eks_node_group" "cpu_node_group" {
     max_size     = var.on_demand_cpu_max_cluster_size
     min_size     = var.on_demand_cpu_min_cluster_size
   }
+  launch_template {
+    name         = aws_launch_template.cpu.name
+    version      = aws_launch_template.cpu.default_version
+  }  
   # Optional: Allow external changes without Terraform plan difference
   lifecycle {
     ignore_changes = [scaling_config[0].desired_size]
@@ -179,8 +271,6 @@ resource "aws_eks_node_group" "gpu_node_group" {
   count          = var.on_demand_gpu_enabled ? 1 : 0
   ami_type       = "AL2_x86_64_GPU"
   cluster_name   = var.cluster_name
-  disk_size      = 100
-  instance_types = var.on_demand_gpu_instance_type
   labels = {
     "node-type"      = "gpu"
     "nvidia.com/gpu" = "gpu"
@@ -205,6 +295,10 @@ resource "aws_eks_node_group" "gpu_node_group" {
     max_size     = var.on_demand_gpu_max_cluster_size
     min_size     = var.on_demand_gpu_min_cluster_size
   }
+  launch_template {
+    name         = aws_launch_template.gpu.name
+    version      = aws_launch_template.gpu.default_version
+  }  
   # Optional: Allow external changes without Terraform plan difference
   lifecycle {
     ignore_changes = [scaling_config[0].desired_size]

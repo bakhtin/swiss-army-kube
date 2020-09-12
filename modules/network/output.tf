@@ -13,3 +13,7 @@ output "private_subnets_cidr_blocks" {
 output "vpc" {
   value = module.vpc
 }
+
+output "vpc_sg" {
+  value = module.vpc.default_security_group_id
+}

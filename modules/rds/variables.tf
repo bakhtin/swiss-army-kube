@@ -7,6 +7,11 @@ variable "vpc_id" {
   description = "VPC id"
 }
 
+variable "vpc_sg" {
+  type        = string
+  description = "VPC default security group"
+}
+
 variable "subnets" {
   type        = list
   description = "vpc subnets"

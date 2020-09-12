@@ -32,6 +32,11 @@ variable "vpc_id" {
   description = "VPC id"
 }
 
+variable "vpc_sg" {
+  type        = string
+  description = "VPC default security group"
+}
+
 variable "subnets" {
   type        = list
   description = "vpc subnets"
@@ -83,8 +88,9 @@ variable "on_demand_common_desired_capacity" {
 }
 
 variable "on_demand_common_instance_type" {
+  type        = string
   description = "EC2 on_demand Instance type"
-  default     = ["m5.large"]
+  default     = "m5.large"
 }
 
 # On-demand GPU instance
@@ -92,6 +98,12 @@ variable "on_demand_gpu_enabled" {
   type        = bool
   description = "Enable gpu on-demand instances"
   default     = false
+}
+
+variable "on_demand_gpu_specifications" {
+  type        = string
+  description = "The elastic GPU to attach to the instance"
+  default     = "eg1.medium"
 }
 
 variable "on_demand_gpu_max_cluster_size" {
@@ -113,8 +125,9 @@ variable "on_demand_gpu_desired_capacity" {
 }
 
 variable "on_demand_gpu_instance_type" {
+  type        = string
   description = "EC2 on_demand Instance type"
-  default     = ["p2.xlarge"]
+  default     = "p2.xlarge"
 }
 
 # On-demand CPU instance
@@ -143,6 +156,7 @@ variable "on_demand_cpu_desired_capacity" {
 }
 
 variable "on_demand_cpu_instance_type" {
+  type        = string
   description = "EC2 on_demand Instance type"
-  default     = ["c5.xlarge"]
+  default     = "c5.xlarge"
 }

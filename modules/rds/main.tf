@@ -6,11 +6,6 @@ data "aws_subnet_ids" "all" {
   vpc_id = var.vpc_id
 }
 
-data "aws_security_group" "default" {
-  vpc_id = var.vpc_id
-  name   = "default"
-}
-
 resource "random_password" "rds_password" {
   length           = 16
   special          = true
@@ -48,7 +43,7 @@ module "db" {
   password = var.rds_database_password != "" ? var.rds_database_password : random_password.rds_password.result
   port     = "${lookup(var.rds_port_mapping, var.rds_database_engine)}"
 
-  vpc_security_group_ids = [data.aws_security_group.default.id]
+  vpc_security_group_ids = [var.vpc_sg
 
   maintenance_window = var.rds_maintenance_window
   backup_window      = var.rds_backup_window
