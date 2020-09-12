@@ -110,8 +110,9 @@ variable "on_demand_common_desired_capacity" {
 }
 
 variable "on_demand_common_instance_type" {
+  type        = string
   description = "EC2 on_demand Instance type"
-  default     = ["m5.large"]
+  default     = "m5.large"
 }
 
 # On-demand GPU instance
@@ -140,8 +141,15 @@ variable "on_demand_gpu_desired_capacity" {
 }
 
 variable "on_demand_gpu_instance_type" {
+  type        = string
   description = "EC2 on_demand Instance type"
-  default     = ["p2.xlarge"]
+  default     = "p2.xlarge"
+}
+
+variable "on_demand_gpu_specifications" {
+  type        = string
+  description = "Elastic Graphics accelerators type"
+  default     = "eg1.medium"
 }
 
 # On-demand CPU instance
@@ -170,8 +178,9 @@ variable "on_demand_cpu_desired_capacity" {
 }
 
 variable "on_demand_cpu_instance_type" {
+  type        = string
   description = "EC2 on_demand Instance type"
-  default     = ["c5.xlarge"]
+  default     = "c5.xlarge"
 }
 
 #Cert-manager

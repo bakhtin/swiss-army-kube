@@ -28,6 +28,7 @@ module "kubernetes" {
   cluster_name    = var.cluster_name
   cluster_version = var.cluster_version
   vpc_id          = module.network.vpc_id
+  vpc_sg          = module.network.vpc_sg
   subnets         = module.network.private_subnets
   admin_arns      = var.admin_arns
   user_arns       = var.user_arns
@@ -51,6 +52,7 @@ module "kubernetes" {
   on_demand_gpu_min_cluster_size = var.on_demand_gpu_min_cluster_size
   on_demand_gpu_desired_capacity = var.on_demand_gpu_desired_capacity
   on_demand_gpu_instance_type    = var.on_demand_gpu_instance_type
+  on_demand_gpu_specifications   = var.on_demand_gpu_specifications
 }
 
 module "system" {
@@ -211,6 +213,7 @@ module "nginx" {
 #  project      = var.project
 #  cluster_name = module.kubernetes.cluster_name
 #  subnets                             = module.network.private_subnets
+#  vpc_sg                              = module.network.vpc_sg
 #  rds_database_name                   = var.rds_database_name
 #  rds_database_username               = var.rds_database_username
 #  rds_database_password               = var.rds_database_password
